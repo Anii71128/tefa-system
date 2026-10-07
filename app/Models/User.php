@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -45,5 +46,35 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function productions(): HasMany
+    {
+        return $this->hasMany(Production::class, 'guru_id');
+    }
+
+    public function productionStudents(): HasMany
+    {
+        return $this->hasMany(ProductionStudent::class, 'student_id');
+    }
+
+    public function qualityControls(): HasMany
+    {
+        return $this->hasMany(QualityControl::class, 'checked_by');
+    }
+
+    public function evaluationsAsStudent(): HasMany
+    {
+        return $this->hasMany(Evaluation::class, 'student_id');
+    }
+
+    public function evaluationsAsEvaluator(): HasMany
+    {
+        return $this->hasMany(Evaluation::class, 'evaluated_by');
     }
 }

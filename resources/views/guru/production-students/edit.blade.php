@@ -1,0 +1,224 @@
+<x-app-layout>
+
+    <div class="p-6">
+
+        {{-- Header --}}
+        <div class="mb-6">
+            <p class="text-sm text-gray-500">
+                Penugasan Siswa / Edit
+            </p>
+
+            <h1 class="mt-1 text-2xl font-semibold text-gray-900">
+                Edit Penugasan Siswa
+            </h1>
+
+            <p class="mt-1 text-sm text-gray-500">
+                Perbarui informasi penugasan siswa.
+            </p>
+        </div>
+
+        {{-- Form --}}
+        <div class="rounded-xl border border-gray-200 bg-white shadow-sm">
+
+            <form
+                action="{{ route('guru.production-students.update', $productionStudent) }}"
+                method="POST"
+            >
+
+                @csrf
+                @method('PUT')
+
+                <div class="flex flex-col gap-6 p-6">
+
+                    {{-- Produksi --}}
+                    <div>
+                        <label
+                            for="production_id"
+                            class="mb-2 block text-sm font-medium text-gray-700"
+                        >
+                            Produksi
+                        </label>
+
+                        <select
+                            id="production_id"
+                            name="production_id"
+                            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-[#25764C] focus:ring-[#25764C]"
+                        >
+
+                            @foreach ($productions as $production)
+
+                                <option
+                                    value="{{ $production->id }}"
+                                    @selected(old('production_id', $productionStudent->production_id) == $production->id)
+                                >
+                                    {{ $production->product->name }}
+                                    — Produksi #{{ $production->id }}
+                                </option>
+
+                            @endforeach
+
+                        </select>
+
+                        @error('production_id')
+                            <p class="mt-1 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    {{-- Siswa --}}
+                    <div>
+                        <label
+                            for="student_id"
+                            class="mb-2 block text-sm font-medium text-gray-700"
+                        >
+                            Siswa
+                        </label>
+
+                        <select
+                            id="student_id"
+                            name="student_id"
+                            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-[#25764C] focus:ring-[#25764C]"
+                        >
+
+                            @foreach ($students as $student)
+
+                                <option
+                                    value="{{ $student->id }}"
+                                    @selected(old('student_id', $productionStudent->student_id) == $student->id)
+                                >
+                                    {{ $student->name }}
+                                    — {{ $student->email }}
+                                </option>
+
+                            @endforeach
+
+                        </select>
+
+                        @error('student_id')
+                            <p class="mt-1 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    {{-- Tugas --}}
+                    <div>
+                        <label
+                            for="task"
+                            class="mb-2 block text-sm font-medium text-gray-700"
+                        >
+                            Tugas
+                        </label>
+
+                        <textarea
+                            id="task"
+                            name="task"
+                            rows="4"
+                            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-[#25764C] focus:ring-[#25764C]"
+                        >{{ old('task', $productionStudent->task) }}</textarea>
+
+                        @error('task')
+                            <p class="mt-1 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    {{-- Deadline --}}
+                    <div>
+                        <label
+                            for="deadline"
+                            class="mb-2 block text-sm font-medium text-gray-700"
+                        >
+                            Deadline
+                        </label>
+
+                        <input
+                            type="date"
+                            id="deadline"
+                            name="deadline"
+                            value="{{ old('deadline', $productionStudent->deadline?->format('Y-m-d')) }}"
+                            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-[#25764C] focus:ring-[#25764C]"
+                        >
+
+                        @error('deadline')
+                            <p class="mt-1 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    {{-- Status --}}
+                    <div>
+                        <label
+                            for="status"
+                            class="mb-2 block text-sm font-medium text-gray-700"
+                        >
+                            Status
+                        </label>
+
+                        <select
+                            id="status"
+                            name="status"
+                            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-[#25764C] focus:ring-[#25764C]"
+                        >
+
+                            <option
+                                value="assigned"
+                                @selected(old('status', $productionStudent->status) === 'assigned')
+                            >
+                                Ditugaskan
+                            </option>
+
+                            <option
+                                value="in_progress"
+                                @selected(old('status', $productionStudent->status) === 'in_progress')
+                            >
+                                Sedang Dikerjakan
+                            </option>
+
+                            <option
+                                value="completed"
+                                @selected(old('status', $productionStudent->status) === 'completed')
+                            >
+                                Selesai
+                            </option>
+
+                        </select>
+
+                        @error('status')
+                            <p class="mt-1 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                </div>
+
+                {{-- Footer --}}
+                <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+
+                    <a
+                        href="{{ route('guru.production-students.show', $productionStudent) }}"
+                        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                        Batal
+                    </a>
+
+                    <button
+                        type="submit"
+                        class="rounded-lg bg-[#25764C] px-4 py-2 text-sm font-medium text-white hover:bg-[#1e633f]"
+                    >
+                        Update Penugasan
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</x-app-layout>
