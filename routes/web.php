@@ -1,7 +1,13 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\EvaluationController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductionController;
+use App\Http\Controllers\ProductionStudentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QualityControlController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -37,11 +43,34 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 });
 
 Route::middleware(['auth', 'role:guru'])->group(function () {
+
     Route::get('/guru', function () {
         return view('guru.dashboard');
     })->name('guru.dashboard');
-});
 
+    Route::resource('guru/products', ProductController::class)
+        ->names('guru.products');
+
+    Route::patch(
+        'guru/orders/{order}/approve',
+        [OrderController::class, 'approve']
+    )->name('guru.orders.approve');
+    Route::patch(
+        'guru/orders/{order}/reject',
+        [OrderController::class, 'reject']
+    )->name('guru.orders.reject');
+
+    Route::resource('guru/orders', OrderController::class)
+        ->names('guru.orders');
+    Route::resource('guru/productions', ProductionController::class)
+        ->names('guru.productions');
+    Route::resource('guru/production-students', ProductionStudentController::class)
+        ->names('guru.production-students');
+    Route::resource('guru/quality-controls', QualityControlController::class)
+        ->names('guru.quality-controls');
+    Route::resource('guru/evaluations', EvaluationController::class)
+        ->names('guru.evaluations');
+});
 Route::middleware(['auth', 'role:siswa'])->group(function () {
     Route::get('/siswa', function () {
         return view('siswa.dashboard');
