@@ -29,10 +29,9 @@
                     </p>
                 </div>
             </div>
-
+            {{-- Navigation --}}
             {{-- Navigation --}}
             <nav class="p-4">
-
                 <p class="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
                     Menu
                 </p>
@@ -41,43 +40,75 @@
 
                     {{-- Dashboard --}}
                     <a href="{{ route('admin.dashboard') }}"
-                        class="flex items-center gap-3 rounded-lg bg-[#EAF6EF] px-3 py-2.5 text-sm font-medium text-[#25764C]">
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium {{ request()->routeIs('admin.dashboard') ? 'bg-[#EAF6EF] text-[#25764C]' : 'text-gray-600 hover:bg-gray-50' }}">
                         <span>▣</span>
                         <span>Dashboard</span>
                     </a>
 
-                    {{-- Produk --}}
-                    <a href="#"
-                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50">
+                    {{-- Produk / Jasa --}}
+                    <a href="{{ route('admin.products.index') }}"
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium {{ request()->routeIs('admin.products.*') ? 'bg-[#EAF6EF] text-[#25764C]' : 'text-gray-600 hover:bg-gray-50' }}">
                         <span>□</span>
                         <span>Produk / Jasa</span>
                     </a>
 
+                    {{-- Kategori --}}
+                    <a href="{{ route('admin.categories.index') }}"
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium {{ request()->routeIs('admin.categories.*') ? 'bg-[#EAF6EF] text-[#25764C]' : 'text-gray-600 hover:bg-gray-50' }}">
+                        <span>□</span>
+                        <span>Kategori</span>
+                    </a>
+
                     {{-- Pesanan --}}
-                    <a href="#"
-                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50">
+                    <a href="{{ route('admin.orders.index') }}"
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium {{ request()->routeIs('admin.orders.*') ? 'bg-[#EAF6EF] text-[#25764C]' : 'text-gray-600 hover:bg-gray-50' }}">
                         <span>□</span>
                         <span>Pesanan</span>
                     </a>
 
                     {{-- Produksi --}}
-                    <a href="#"
-                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50">
+                    <a href="{{ route('admin.productions.index') }}"
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium {{ request()->routeIs('admin.productions.*') ? 'bg-[#EAF6EF] text-[#25764C]' : 'text-gray-600 hover:bg-gray-50' }}">
                         <span>□</span>
                         <span>Produksi</span>
                     </a>
 
-                    {{-- Transaksi --}}
-                    <a href="#"
-                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50">
+                    {{-- Penugasan Siswa --}}
+                    <a href="{{ route('admin.production-students.index') }}"
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium {{ request()->routeIs('admin.production-students.*') ? 'bg-[#EAF6EF] text-[#25764C]' : 'text-gray-600 hover:bg-gray-50' }}">
                         <span>□</span>
+                        <span>Penugasan Siswa</span>
+                    </a>
+
+                    {{-- Quality Control --}}
+                    <a href="{{ route('admin.quality-controls.index') }}"
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium {{ request()->routeIs('admin.quality-controls.*') ? 'bg-[#EAF6EF] text-[#25764C]' : 'text-gray-600 hover:bg-gray-50' }}">
+                        <span>□</span>
+                        <span>Quality Control</span>
+                    </a>
+
+                    {{-- Evaluasi Siswa --}}
+                    <a href="{{ route('admin.evaluations.index') }}"
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium {{ request()->routeIs('admin.evaluations.*') ? 'bg-[#EAF6EF] text-[#25764C]' : 'text-gray-600 hover:bg-gray-50' }}">
+                        <span>□</span>
+                        <span>Evaluasi Siswa</span>
+                    </a>
+
+                    <a href="{{ route('admin.transactions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+   {{ request()->routeIs('admin.transactions.*')
+    ? 'bg-[#EAF6EF] text-[#25764C] font-semibold'
+    : 'text-gray-600 hover:bg-gray-100' }}">
+
                         <span>Transaksi</span>
                     </a>
 
+                    {{-- Pembayaran: belum dihubungkan --}}
                     {{-- Pembayaran --}}
-                    <a href="#"
-                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50">
-                        <span>□</span>
+                    <a href="{{ route('admin.payments.index') }}" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+    {{ request()->routeIs('admin.payments.*')
+    ? 'bg-[#EAF6EF] text-[#25764C]'
+    : 'text-gray-600 hover:bg-gray-50' }}">
+                        <span>▪</span>
                         <span>Pembayaran</span>
                     </a>
 
@@ -89,9 +120,11 @@
                         Laporan
                     </p>
 
-                    <a href="#"
-                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50">
-                        <span>□</span>
+                    <a href="{{ route('admin.reports.index') }}" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+    {{ request()->routeIs('admin.reports.*')
+    ? 'bg-[#EAF6EF] text-[#25764C]'
+    : 'text-gray-600 hover:bg-gray-50' }}">
+                        <span>▪</span>
                         <span>Laporan</span>
                     </a>
                 </div>
@@ -103,12 +136,11 @@
                     </p>
 
                     <a href="{{ route('profile.edit') }}"
-                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50">
+                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium {{ request()->routeIs('profile.*') ? 'bg-[#EAF6EF] text-[#25764C]' : 'text-gray-600 hover:bg-gray-50' }}">
                         <span>□</span>
-                        <span>Pengaturan</span>
+                        <span>Pengaturan / Profil</span>
                     </a>
                 </div>
-
             </nav>
         </aside>
 
