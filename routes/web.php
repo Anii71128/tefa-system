@@ -143,9 +143,9 @@ Route::middleware(['auth', 'role:siswa'])->group(function () {
 
 
 Route::middleware(['auth', 'role:user'])->group(function () {
-    Route::get('/user', function () {
-        return view('user.dashboard');
-    })->name('user.dashboard');
+    // Route::get('/user', function () {
+    //     return view('user.dashboard');
+    // })->name('user.dashboard');
 
     // Katalog produk untuk pelanggan.
     Route::get('/user/products', [UserOrderController::class, 'index'])
@@ -160,6 +160,20 @@ Route::middleware(['auth', 'role:user'])->group(function () {
         OrderDetailController::class,
         'show',
     ])->name('user.orders.show');
+    Route::get('/user/orders', function (\Illuminate\Http\Request $request) {
+        $orders = \App\Models\Order::query()
+            ->where('user_id', $request->user()->id)
+            ->with([
+                'orderItems.product',
+                'payments:id,order_id,status,amount,payment_method,created_at',
+            ])
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'orders' => $orders,
+        ]);
+    })->name('user.orders.list');
 });
 
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +33,7 @@ class OrderController extends Controller
     /**
      * Membuat pesanan pelanggan.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
         $validated = $request->validate([
             'items' => ['required', 'array', 'min:1'],
@@ -117,8 +118,24 @@ class OrderController extends Controller
             return $order;
         });
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Pesanan berhasil dibuat dan menunggu persetujuan guru.',
+                'order' => [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'total_amount' => $order->total_amount,
+                    'status' => $order->status,
+                    'payment_status' => $order->payment_status,
+                ],
+            ], 201);
+        }
+
         return redirect()
             ->route('user.orders.show', $order)
-            ->with('success', 'Pesanan berhasil dibuat dan menunggu persetujuan guru.');
+            ->with(
+                'success',
+                'Pesanan berhasil dibuat dan menunggu persetujuan guru.'
+            );
     }
 }
