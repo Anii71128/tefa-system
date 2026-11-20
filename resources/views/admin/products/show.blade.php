@@ -217,7 +217,7 @@
                     </p>
 
                     <p class="mt-1 text-sm font-medium text-[#343A46]">
-                        {{ $product->created_at->format('d M Y, H:i') }}
+                        {{ $product->created_at?->format('d M Y, H:i') ?? '-' }}
                     </p>
 
                 </div>
@@ -230,7 +230,7 @@
                     </p>
 
                     <p class="mt-1 text-sm font-medium text-[#343A46]">
-                        {{ $product->updated_at->format('d M Y, H:i') }}
+                        {{ $product->created_at?->format('d M Y, H:i') ?? '-' }}
                     </p>
 
                 </div>

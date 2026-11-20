@@ -219,64 +219,375 @@
         $targetSum = collect($productionChart)->sum('target');
         $actualSum = collect($productionChart)->sum('actual');
 
-        // Contoh struktur item (kosongkan = tampil empty state):
-        // $orders: ['id', 'name', 'org', 'product', 'date', 'status', 'total']
-        // $payments: ['init', 'name', 'info', 'action']
-        // $topProducts: ['name', 'info', 'badge', 'badgeCls']
-        // $lines: ['name', 'major', 'pct' (angka 0-100), 'qty']
-        // $reportNotes: ['dot', 'text'], $activities: ['dot', 'text', 'time']
+                // Status pesanan
         $statusMap = [
-            'pending' => 'Menunggu', 'waiting' => 'Menunggu', 'menunggu' => 'Menunggu', 'unpaid' => 'Menunggu',
-            'approved' => 'Diproses', 'confirmed' => 'Diproses', 'processing' => 'Diproses', 'production' => 'Diproses',
-            'in_production' => 'Diproses', 'diproses' => 'Diproses',
-            'completed' => 'Selesai', 'done' => 'Selesai', 'finished' => 'Selesai', 'delivered' => 'Selesai', 'selesai' => 'Selesai',
-            'rejected' => 'Dibatalkan', 'cancelled' => 'Dibatalkan', 'canceled' => 'Dibatalkan', 'failed' => 'Dibatalkan', 'dibatalkan' => 'Dibatalkan',
+            'pending' => 'Menunggu',
+            'waiting' => 'Menunggu',
+            'menunggu' => 'Menunggu',
+            'unpaid' => 'Menunggu',
+            'approved' => 'Diproses',
+            'confirmed' => 'Diproses',
+            'processing' => 'Diproses',
+            'production' => 'Diproses',
+            'in_production' => 'Diproses',
+            'diproses' => 'Diproses',
+            'completed' => 'Selesai',
+            'done' => 'Selesai',
+            'finished' => 'Selesai',
+            'delivered' => 'Selesai',
+            'selesai' => 'Selesai',
+            'rejected' => 'Dibatalkan',
+            'cancelled' => 'Dibatalkan',
+            'canceled' => 'Dibatalkan',
+            'failed' => 'Dibatalkan',
+            'dibatalkan' => 'Dibatalkan',
         ];
 
-        // 5 pesanan terbaru (relasi opsional: user, orderItems.product)
-        $recentOrders = $safe(fn () => \App\Models\Order::with(['user', 'orderItems.product'])->latest()->take(5)->get())
-            ?? $safe(fn () => \App\Models\Order::latest()->take(5)->get())
-            ?? collect();
+        // -------------------------------------------------------
+        // PESANAN TERBARU
+        // Sumber: orders, users, order_items, products
+        // -------------------------------------------------------
 
-        $orders = $recentOrders->map(function ($o) use ($months, $statusMap) {
+        $recentOrders = $safe(
+            fn () => \App\Models\Order::with(['user', 'orderItems.product'])
+                ->latest()
+                ->take(5)
+                ->get(),
+            collect()
+        );
+
+        $orders = collect($recentOrders)->map(function ($o) use ($months, $statusMap) {
             $rawStatus = strtolower((string) data_get($o, 'status', ''));
-            $items = data_get($o, 'orderItems');
-            $first = data_get($o, 'orderItems.0.product.name');
-            $extra = $items ? max($items->count() - 1, 0) : 0;
-            $code = data_get($o, 'order_number') ?? data_get($o, 'invoice_number') ?? data_get($o, 'code');
+
+            $items = data_get($o, 'orderItems', collect());
+            $items = collect($items);
+
+            $firstProduct = data_get($o, 'orderItems.0.product.name');
+
+            $extra = max($items->count() - 1, 0);
+
+            $code = data_get($o, 'order_number')
+                ?? data_get($o, 'invoice_number')
+                ?? data_get($o, 'code');
+
+            $createdAt = $o->created_at ?? null;
 
             return [
                 'id' => $code ? (string) $code : '#ORD-' . $o->getKey(),
-                'name' => data_get($o, 'user.name') ?? data_get($o, 'customer_name') ?? '-',
-                'org' => (string) (data_get($o, 'user.email') ?? ''),
-                'product' => $first ? $first . ($extra > 0 ? ' +' . $extra . ' lainnya' : '') : '-',
-                'date' => $o->created_at ? $o->created_at->format('d') . ' ' . $months[$o->created_at->month - 1] . ' ' . $o->created_at->year : '-',
-                'status' => $statusMap[$rawStatus] ?? ($rawStatus !== '' ? ucfirst($rawStatus) : '-'),
-                'total' => 'Rp ' . number_format((float) data_get($o, 'total_amount', 0), 0, ',', '.'),
+                'name' => data_get($o, 'user.name')
+                    ?? data_get($o, 'customer_name')
+                    ?? '-',
+                'org' => data_get($o, 'user.email') ?? '',
+                'product' => $firstProduct
+                    ? $firstProduct . ($extra > 0 ? ' +' . $extra . ' lainnya' : '')
+                    : '-',
+                'date' => $createdAt
+                    ? $createdAt->format('d') . ' ' . $months[$createdAt->month - 1] . ' ' . $createdAt->year
+                    : '-',
+                'status' => $statusMap[$rawStatus]
+                    ?? ($rawStatus !== '' ? ucfirst($rawStatus) : '-'),
+                'total' => 'Rp ' . number_format(
+                    (float) data_get($o, 'total_amount', 0),
+                    0,
+                    ',',
+                    '.'
+                ),
             ];
         })->all();
 
-        // Pembayaran yang masih pending
-        $pendingPayments = $safe(fn () => \App\Models\Payment::with('order.user')->where('status', 'pending')->latest()->take(3)->get())
-            ?? $safe(fn () => \App\Models\Payment::where('status', 'pending')->latest()->take(3)->get())
-            ?? collect();
-        $pendingCount = $safe(fn () => \App\Models\Payment::where('status', 'pending')->count(), 0);
+        // -------------------------------------------------------
+        // PEMBAYARAN PENDING
+        // Sumber: payments, orders, users
+        // -------------------------------------------------------
 
-        $payments = $pendingPayments->map(function ($pay) {
-            $name = data_get($pay, 'order.user.name') ?? '-';
+        $payments = [];
+        $pendingCount = 0;
 
-            return [
-                'init' => strtoupper(mb_substr($name === '-' ? '?' : $name, 0, 2)),
-                'name' => $name,
-                'info' => '#ORD-' . data_get($pay, 'order_id') . ' • Rp ' . number_format((float) data_get($pay, 'amount', 0), 0, ',', '.'),
-                'action' => 'Detail',
-                'url' => route('admin.payments.show', $pay->getKey()),
-            ];
-        })->all();
+        if (\Illuminate\Support\Facades\Schema::hasTable('payments')) {
+            $paymentColumns = \Illuminate\Support\Facades\Schema::getColumnListing('payments');
+
+            if (
+                in_array('status', $paymentColumns)
+                && in_array('order_id', $paymentColumns)
+            ) {
+                $pendingCount = \Illuminate\Support\Facades\DB::table('payments')
+                    ->where('status', 'pending')
+                    ->count();
+
+                $paymentQuery = \Illuminate\Support\Facades\DB::table('payments as p')
+                    ->where('p.status', 'pending');
+
+                if (\Illuminate\Support\Facades\Schema::hasTable('orders')) {
+                    $paymentQuery->leftJoin('orders as o', 'o.id', '=', 'p.order_id');
+
+                    if (
+                        \Illuminate\Support\Facades\Schema::hasTable('users')
+                        && \Illuminate\Support\Facades\Schema::hasColumn('orders', 'user_id')
+                    ) {
+                        $paymentQuery->leftJoin('users as u', 'u.id', '=', 'o.user_id')
+                            ->addSelect('u.name as customer_name');
+                    }
+                }
+
+                $amountColumn = in_array('amount', $paymentColumns)
+                    ? 'amount'
+                    : (in_array('total_amount', $paymentColumns) ? 'total_amount' : null);
+
+                $paymentQuery->select('p.id', 'p.order_id');
+
+                if ($amountColumn) {
+                    $paymentQuery->addSelect('p.' . $amountColumn . ' as payment_amount');
+                }
+
+                $pendingPayments = $paymentQuery
+                    ->orderByDesc('p.id')
+                    ->limit(3)
+                    ->get();
+
+                $payments = $pendingPayments->map(function ($pay) {
+                    $name = $pay->customer_name ?? '-';
+
+                    return [
+                        'init' => strtoupper(mb_substr($name === '-' ? '?' : $name, 0, 2)),
+                        'name' => $name,
+                        'info' => '#ORD-' . $pay->order_id
+                            . ' • Rp ' . number_format((float) ($pay->payment_amount ?? 0), 0, ',', '.'),
+                        'action' => 'Detail',
+                        'url' => route('admin.payments.show', $pay->id),
+                    ];
+                })->all();
+            }
+        }
+
+        // -------------------------------------------------------
+        // PRODUK TERLARIS
+        // Sumber: order_items dan products
+        // -------------------------------------------------------
+
         $topProducts = [];
+
+        if (
+            \Illuminate\Support\Facades\Schema::hasTable('order_items')
+            && \Illuminate\Support\Facades\Schema::hasTable('products')
+        ) {
+            $productColumns = \Illuminate\Support\Facades\Schema::getColumnListing('products');
+
+            $productNameColumn = collect(['name', 'product_name', 'title'])
+                ->first(fn ($column) => in_array($column, $productColumns));
+
+            if ($productNameColumn) {
+                $topProductRows = \Illuminate\Support\Facades\DB::table('order_items as oi')
+                    ->join('products as p', 'p.id', '=', 'oi.product_id')
+                    ->select(
+                        'p.id',
+                        'p.' . $productNameColumn . ' as product_name'
+                    )
+                    ->selectRaw('SUM(oi.quantity) as total_sold')
+                    ->selectRaw('SUM(oi.subtotal) as total_revenue')
+                    ->groupBy('p.id', 'p.' . $productNameColumn)
+                    ->orderByDesc('total_sold')
+                    ->limit(5)
+                    ->get();
+
+                $topProducts = $topProductRows->map(function ($product) {
+                    return [
+                        'name' => $product->product_name,
+                        'info' => number_format((int) $product->total_sold, 0, ',', '.') . ' unit terjual',
+                        'badge' => 'Rp ' . number_format((float) $product->total_revenue, 0, ',', '.'),
+                        'badgeCls' => 'bg-[#CDEBD8] text-[#1F6B45]',
+                    ];
+                })->all();
+            }
+        }
+
+        // -------------------------------------------------------
+        // PRODUKSI BERJALAN
+        // Sumber: productions dan production_students
+        // -------------------------------------------------------
+
         $lines = [];
+
+        if (
+            \Illuminate\Support\Facades\Schema::hasTable('productions')
+            && \Illuminate\Support\Facades\Schema::hasTable('production_students')
+        ) {
+            $productionColumns = \Illuminate\Support\Facades\Schema::getColumnListing('productions');
+
+            $productionNameColumn = collect([
+                'name',
+                'title',
+                'production_name',
+                'product_name',
+            ])->first(fn ($column) => in_array($column, $productionColumns));
+
+            $productionQuery = \Illuminate\Support\Facades\DB::table('productions');
+
+            if (in_array('created_at', $productionColumns)) {
+                $productionQuery->orderByDesc('created_at');
+            } else {
+                $productionQuery->orderByDesc('id');
+            }
+
+            $productionRows = $productionQuery->limit(10)->get();
+
+            foreach ($productionRows as $production) {
+                $assignments = \Illuminate\Support\Facades\DB::table('production_students')
+                    ->where('production_id', $production->id)
+                    ->get();
+
+                $totalStudents = $assignments->count();
+
+                $completedStudents = $assignments
+                    ->where('status', 'completed')
+                    ->count();
+
+                $activeStudents = $assignments
+                    ->where('status', 'in_progress')
+                    ->count();
+
+                // Hanya tampilkan produksi yang memiliki siswa dan belum seluruhnya selesai.
+                if ($totalStudents === 0 || $completedStudents === $totalStudents) {
+                    continue;
+                }
+
+                $productionName = $productionNameColumn
+                    ? ($production->{$productionNameColumn} ?? 'Produksi #' . $production->id)
+                    : 'Produksi #' . $production->id;
+
+                $major = collect(['major', 'department', 'category'])
+                    ->first(fn ($column) => in_array($column, $productionColumns));
+
+                $majorName = $major
+                    ? ($production->{$major} ?? 'Teaching Factory')
+                    : 'Teaching Factory';
+
+                $lines[] = [
+                    'name' => $productionName,
+                    'major' => $majorName,
+                    'pct' => (int) round(($completedStudents / $totalStudents) * 100),
+                    'qty' => $completedStudents . '/' . $totalStudents . ' siswa selesai',
+                ];
+            }
+        }
+
+        // -------------------------------------------------------
+        // LAPORAN EKSEKUTIF
+        // Ringkasan dihitung dari data database yang tersedia.
+        // -------------------------------------------------------
+
         $reportNotes = [];
-        $activities = [];
+
+        $reportNotes[] = [
+            'dot' => 'bg-[#25764C]',
+            'text' => 'Terdapat ' . number_format($totalOrders, 0, ',', '.') . ' pesanan yang tercatat di sistem.',
+        ];
+
+        $reportNotes[] = [
+            'dot' => 'bg-[#5B5BD6]',
+            'text' => 'Sistem memiliki ' . number_format($totalProducts, 0, ',', '.') . ' produk yang terdaftar.',
+        ];
+
+        $reportNotes[] = [
+            'dot' => 'bg-[#C2570C]',
+            'text' => 'Total pendapatan dari pesanan yang berstatus lunas sebesar ' . $rp($totalRevenue) . '.',
+        ];
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('production_students')) {
+            $inProgressCount = \Illuminate\Support\Facades\DB::table('production_students')
+                ->where('status', 'in_progress')
+                ->count();
+
+            $completedCount = \Illuminate\Support\Facades\DB::table('production_students')
+                ->where('status', 'completed')
+                ->count();
+
+            $reportNotes[] = [
+                'dot' => 'bg-[#25764C]',
+                'text' => $inProgressCount . ' penugasan siswa sedang berjalan dan ' . $completedCount . ' penugasan telah selesai.',
+            ];
+        }
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('quality_controls')) {
+            $revisionCount = \Illuminate\Support\Facades\DB::table('quality_controls')
+                ->where('status', 'revision')
+                ->count();
+
+            $passedCount = \Illuminate\Support\Facades\DB::table('quality_controls')
+                ->where('status', 'passed')
+                ->count();
+
+            $reportNotes[] = [
+                'dot' => 'bg-[#C2570C]',
+                'text' => $passedCount . ' pemeriksaan kualitas telah lolos dan ' . $revisionCount . ' memerlukan revisi.',
+            ];
+        }
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('evaluations')) {
+            $evaluationCount = \Illuminate\Support\Facades\DB::table('evaluations')->count();
+
+            $reportNotes[] = [
+                'dot' => 'bg-[#5B5BD6]',
+                'text' => 'Total evaluasi kompetensi siswa yang tercatat sebanyak ' . $evaluationCount . ' data.',
+            ];
+        }
+
+        // -------------------------------------------------------
+        // AKTIVITAS TERBARU
+        // Mengambil catatan terbaru dari tabel yang memiliki created_at.
+        // Ini bukan tabel audit log khusus.
+        // -------------------------------------------------------
+
+        $activities = collect();
+
+        $activityTables = [
+            'orders' => 'Pesanan baru tercatat',
+            'productions' => 'Data produksi ditambahkan',
+            'payments' => 'Data pembayaran ditambahkan',
+            'quality_controls' => 'Pemeriksaan kualitas dicatat',
+            'evaluations' => 'Evaluasi siswa dicatat',
+        ];
+
+        foreach ($activityTables as $table => $description) {
+            if (
+                \Illuminate\Support\Facades\Schema::hasTable($table)
+                && \Illuminate\Support\Facades\Schema::hasColumn($table, 'created_at')
+            ) {
+                $records = \Illuminate\Support\Facades\DB::table($table)
+                    ->whereNotNull('created_at')
+                    ->orderByDesc('created_at')
+                    ->limit(5)
+                    ->get(['id', 'created_at']);
+
+                foreach ($records as $record) {
+                    $activities->push([
+                        'dot' => 'bg-[#25764C]',
+                        'text' => $description . ' (#' . $record->id . ')',
+                        'created_at' => \Illuminate\Support\Carbon::parse($record->created_at),
+                    ]);
+                }
+            }
+        }
+
+        $activities = $activities
+            ->sortByDesc('created_at')
+            ->take(6)
+            ->map(function ($activity) {
+                return [
+                    'dot' => $activity['dot'],
+                    'text' => $activity['text'],
+                    'time' => $activity['created_at']->diffForHumans(),
+                ];
+            })
+            ->values()
+            ->all();
+
+        // Warna status pesanan
+        $statusCls = [
+            'Diproses' => 'bg-[#E2E8FB] text-[#3B4FC4]',
+            'Selesai' => 'bg-[#CDEBD8] text-[#1F6B45]',
+            'Menunggu' => 'bg-[#FDF0C4] text-[#92600A]',
+            'Dibatalkan' => 'bg-[#FDE0E0] text-[#C0392B]',
+        ];
 
         $statusCls = [
             'Diproses' => 'bg-[#E2E8FB] text-[#3B4FC4]',
