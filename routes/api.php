@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -17,10 +16,6 @@ Route::get('/products', function () {
         ->latest()
         ->get();
 });
-
-Route::get('/categories', fn () => Category::all());
-Route::get('/products', fn () => Product::with('category')->get());
-Route::get('/products/{id}', fn ($id) => Product::with('category')->findOrFail($id));
 
 // API detail produk TEFA
 Route::get('/products/{product}', function (Product $product) {
