@@ -13,10 +13,14 @@ class ProductionStudent extends Model
         'task',
         'deadline',
         'status',
+        'progress',
+        'submission_file',
+        'work_notes',
     ];
 
     protected $casts = [
         'deadline' => 'date',
+        'progress' => 'integer',
     ];
 
     public function production(): BelongsTo

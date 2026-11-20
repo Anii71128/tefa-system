@@ -22,6 +22,13 @@ use App\Http\Controllers\User\OrderDetailController;
 use App\Http\Controllers\MidtransNotificationController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Siswa\TaskController;
+use App\Http\Controllers\Siswa\DashboardController as SiswaDashboardController;
+use App\Http\Controllers\Siswa\ProgressController;
+use App\Http\Controllers\Siswa\HistoryController;
+use App\Http\Controllers\Siswa\EvaluationController as SiswaEvaluationController;
+
+
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -135,10 +142,38 @@ Route::middleware(['auth', 'role:guru'])->group(function () {
     Route::resource('guru/evaluations', EvaluationController::class)
         ->names('guru.evaluations');
 });
+
 Route::middleware(['auth', 'role:siswa'])->group(function () {
-    Route::get('/siswa', function () {
-        return view('siswa.dashboard');
-    })->name('siswa.dashboard');
+
+    Route::get('/siswa', [
+        SiswaDashboardController::class,
+        'index',
+    ])->name('siswa.dashboard');
+    Route::get('/siswa/tugas', [TaskController::class, 'index'])
+        ->name('siswa.tasks.index');
+
+    Route::get('/siswa/tugas/{id}', [TaskController::class, 'show'])
+        ->name('siswa.tasks.show');
+    // Progres Pengerjaan Siswa
+    Route::get('/siswa/progres', [ProgressController::class, 'index'])
+        ->name('siswa.progress.index');
+
+    Route::get('/siswa/progres/{id}', [ProgressController::class, 'edit'])
+        ->name('siswa.progress.edit');
+
+    Route::put('/siswa/progres/{id}', [ProgressController::class, 'update'])
+        ->name('siswa.progress.update');
+    Route::get('/siswa/riwayat', [HistoryController::class, 'index'])
+        ->name('siswa.history.index');
+    // Evaluasi Siswa
+    Route::get('/siswa/evaluasi', [EvaluationController::class, 'index'])
+        ->name('siswa.evaluations.index');
+
+    Route::get('/siswa/evaluasi', [SiswaEvaluationController::class, 'index'])
+        ->name('siswa.evaluations.index');
+
+    Route::get('/siswa/evaluasi/{id}', [SiswaEvaluationController::class, 'show'])
+        ->name('siswa.evaluations.show');
 });
 
 
