@@ -48,7 +48,7 @@ class AuthenticatedSessionController extends Controller
             'admin' => redirect()->route('admin.dashboard'),
             'guru' => redirect()->route('guru.dashboard'),
             'siswa' => redirect()->route('siswa.dashboard'),
-            'user' => redirect()->route('user.dashboard'),
+            'user' => redirect()->away(config('app.frontend_url')),
             default => redirect()->route('dashboard'),
         };
     }
