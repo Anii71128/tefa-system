@@ -56,18 +56,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Frontend URL
-    |--------------------------------------------------------------------------
-    |
-    | Alamat frontend Vue. Dipakai untuk mengarahkan pengguna dengan role "user"
-    | ke aplikasi Vue setelah login lewat halaman Blade.
-    |
-    */
-
-    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
-
-    /*
-    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

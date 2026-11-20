@@ -2,39 +2,35 @@
 
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\EvaluationController as AdminEvaluationController;
-use App\Http\Controllers\Admin\OrderController as AdminOrderController;
-use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
-use App\Http\Controllers\Admin\ProductionController as AdminProductionController;
-use App\Http\Controllers\Admin\ProductionStudentController as AdminProductionStudentController;
-use App\Http\Controllers\Admin\QualityControlController as AdminQualityControlController;
-use App\Http\Controllers\Admin\ReportController as AdminReportController;
-use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 use App\Http\Controllers\EvaluationController;
-use App\Http\Controllers\MidtransNotificationController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\ProductionStudentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QualityControlController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\ProductionController as AdminProductionController;
+use App\Http\Controllers\Admin\ProductionStudentController as AdminProductionStudentController;
+use App\Http\Controllers\Admin\QualityControlController as AdminQualityControlController;
+use App\Http\Controllers\Admin\EvaluationController as AdminEvaluationController;
+use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\User\OrderController as UserOrderController;
 use App\Http\Controllers\User\OrderDetailController;
-use App\Http\Controllers\User\UserProfileController;
-use App\Models\Order;
-use Illuminate\Http\Request;
+use App\Http\Controllers\MidtransNotificationController;
+use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
+// Route::get('/dashboard', function () {
+//     return view('dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])
         ->name('profile.edit');
@@ -49,13 +45,12 @@ Route::middleware('auth')->group(function () {
         [PaymentController::class, 'create']
     )->name('orders.payment.create');
 });
-
 Route::get('/dashboard', function () {
     return match (auth()->user()->role) {
         'admin' => redirect()->route('admin.dashboard'),
         'guru' => redirect()->route('guru.dashboard'),
         'siswa' => redirect()->route('siswa.dashboard'),
-        'user' => redirect()->away(config('app.frontend_url')),
+        'user' => redirect()->route('user.dashboard'),
         default => abort(403),
     };
 })->middleware('auth')->name('dashboard');
@@ -146,6 +141,7 @@ Route::middleware(['auth', 'role:siswa'])->group(function () {
     })->name('siswa.dashboard');
 });
 
+
 Route::middleware(['auth', 'role:user'])->group(function () {
     // Route::get('/user', function () {
     //     return view('user.dashboard');
@@ -164,8 +160,8 @@ Route::middleware(['auth', 'role:user'])->group(function () {
         OrderDetailController::class,
         'show',
     ])->name('user.orders.show');
-    Route::get('/user/orders', function (Request $request) {
-        $orders = Order::query()
+    Route::get('/user/orders', function (\Illuminate\Http\Request $request) {
+        $orders = \App\Models\Order::query()
             ->where('user_id', $request->user()->id)
             ->with([
                 'orderItems.product',
@@ -178,11 +174,11 @@ Route::middleware(['auth', 'role:user'])->group(function () {
             'orders' => $orders,
         ]);
     })->name('user.orders.list');
-
-    Route::middleware('auth')->post('/user/profile', [UserProfileController::class, 'update']);
 });
 
-require __DIR__.'/auth.php';
+
+
+require __DIR__ . '/auth.php';
 Route::post(
     '/midtrans/notification',
     [MidtransNotificationController::class, 'handle']
