@@ -38,5 +38,14 @@ class DatabaseSeeder extends Seeder
                 'role' => 'siswa',
             ]
         );
+        
+        User::updateOrCreate(
+            ['email' => 'user@tefa.test'],
+            [
+                'name' => 'Pembeli TEFA',
+                'password' => Hash::make('password'),
+                'role' => 'user',
+            ]
+        );
     }
 }
