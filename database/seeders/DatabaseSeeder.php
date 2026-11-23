@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -22,6 +21,7 @@ class DatabaseSeeder extends Seeder
                 'role' => 'admin',
             ]
         );
+
         User::updateOrCreate(
             ['email' => 'guru@tefa.test'],
             [
@@ -30,12 +30,21 @@ class DatabaseSeeder extends Seeder
                 'role' => 'guru',
             ]
         );
+
         User::updateOrCreate(
             ['email' => 'siswa@tefa.test'],
             [
                 'name' => 'Siswa TEFA',
                 'password' => Hash::make('password'),
                 'role' => 'siswa',
+            ]
+        );
+        User::updateOrCreate(
+            ['email' => 'user@tefa.test'],
+            [
+                'name' => 'Pembeli TEFA',
+                'password' => Hash::make('password'),
+                'role' => 'user',
             ]
         );
     }
