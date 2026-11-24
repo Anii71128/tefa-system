@@ -4,6 +4,11 @@
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ProductionController as AdminProductionController;
+use App\Http\Controllers\Admin\ProductionStudentController as AdminProductionStudentController;
+use App\Http\Controllers\Admin\QualityControlController as AdminQualityControlController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
@@ -24,6 +29,18 @@ use App\Http\Controllers\MidtransNotificationController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Siswa\DashboardController as SiswaDashboardController;
+use App\Http\Controllers\Siswa\EvaluationController as SiswaEvaluationController;
+use App\Http\Controllers\Siswa\HistoryController;
+use App\Http\Controllers\Siswa\ProgressController;
+use App\Http\Controllers\Siswa\TaskController;
+
+use App\Http\Controllers\User\OrderController as UserOrderController;
+use App\Http\Controllers\User\OrderDetailController;
+use App\Http\Controllers\User\UserProfileController;
+
+use App\Models\Order;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,12 +52,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
-
-/*
-|--------------------------------------------------------------------------
-| Profil Pengguna
-|--------------------------------------------------------------------------
-*/
 
 Route::middleware('auth')->group(function () {
 
@@ -57,14 +68,8 @@ Route::middleware('auth')->group(function () {
         ->name('orders.payment.create');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Dashboard Redirect Berdasarkan Role
-|--------------------------------------------------------------------------
-*/
-
 Route::get('/dashboard', function () {
-
+Route::get('/dashboard', function () {
     return match (auth()->user()->role) {
         'admin' => redirect()->route('admin.dashboard'),
         'guru' => redirect()->route('guru.dashboard'),
@@ -74,12 +79,23 @@ Route::get('/dashboard', function () {
     };
 
 })->middleware('auth')->name('dashboard');
+Route::middleware('auth')->group(function () {
 
-/*
-|--------------------------------------------------------------------------
-| ADMIN
-|--------------------------------------------------------------------------
-*/
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->name('profile.destroy');
+
+    Route::post(
+        '/orders/{order}/payment',
+        [PaymentController::class, 'create']
+    )->name('orders.payment.create');
+
+});
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
@@ -107,12 +123,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // Produk
     Route::resource('admin/products', AdminProductController::class)
         ->names('admin.products');
-
-    // Kategori
     Route::resource('admin/categories', CategoryController::class)
         ->names('admin.categories');
 
-    // Pesanan
     Route::get('admin/orders', [AdminOrderController::class, 'index'])
         ->name('admin.orders.index');
 
@@ -123,7 +136,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         AdminOrderController::class,
         'updateStatus',
     ])->name('admin.orders.update-status');
-
     // Produksi
     Route::resource('admin/productions', AdminProductionController::class)
         ->names('admin.productions');
@@ -139,36 +151,56 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // Evaluasi
     Route::resource('admin/evaluations', AdminEvaluationController::class)
         ->names('admin.evaluations');
+    Route::resource('admin/productions', AdminProductionController::class)
+        ->names('admin.productions');
 
-    // Transaksi
+    Route::resource(
+        'admin/production-students',
+        AdminProductionStudentController::class
+    )->names('admin.production-students');
+
+    Route::resource('admin/quality-controls', AdminQualityControlController::class)
+        ->names('admin.quality-controls');
+
+    Route::resource('admin/evaluations', AdminEvaluationController::class)
+        ->names('admin.evaluations');
+
     Route::get('admin/transactions', [AdminTransactionController::class, 'index'])
         ->name('admin.transactions.index');
 
     Route::get('admin/transactions/{order}', [AdminTransactionController::class, 'show'])
         ->name('admin.transactions.show');
-
     // Pembayaran
     Route::get('admin/payments', [AdminPaymentController::class, 'index'])
         ->name('admin.payments.index');
 
     Route::get('admin/payments/{payment}', [AdminPaymentController::class, 'show'])
-        ->name('admin.payments.show');
+
+
+    Route::get('admin/payments', [
+        AdminPaymentController::class,
+        'index',
+    ])->name('admin.payments.index');
+
+    Route::get('admin/payments/{payment}', [
+        AdminPaymentController::class,
+        'show',
+    ])->name('admin.payments.show');
 
     // Laporan
     Route::get('admin/reports/export/excel', [
         AdminReportController::class,
         'exportExcel',
     ])->name('admin.reports.export.excel');
-
     Route::get('admin/reports', [AdminReportController::class, 'index'])
-        ->name('admin.reports.index');
+
+    Route::get('admin/reports', [
+        AdminReportController::class,
+        'index',
+    ])->name('admin.reports.index');
+
 });
 
-/*
-|--------------------------------------------------------------------------
-| GURU
-|--------------------------------------------------------------------------
-*/
 
 Route::middleware(['auth', 'role:guru'])->group(function () {
 
@@ -179,10 +211,17 @@ Route::middleware(['auth', 'role:guru'])->group(function () {
     // Produk Guru
     Route::resource('guru/products', ProductController::class)
         ->names('guru.products');
-
     // Persetujuan Pesanan
     Route::patch('guru/orders/{order}/approve', [OrderController::class, 'approve'])
-        ->name('guru.orders.approve');
+    Route::patch(
+        'guru/orders/{order}/approve',
+        [OrderController::class, 'approve']
+    )->name('guru.orders.approve');
+
+    Route::patch(
+        'guru/orders/{order}/reject',
+        [OrderController::class, 'reject']
+    )->name('guru.orders.reject');
 
     Route::patch('guru/orders/{order}/reject', [OrderController::class, 'reject'])
         ->name('guru.orders.reject');
@@ -190,8 +229,6 @@ Route::middleware(['auth', 'role:guru'])->group(function () {
     // Pesanan
     Route::resource('guru/orders', OrderController::class)
         ->names('guru.orders');
-
-    // Produksi
     Route::resource('guru/productions', ProductionController::class)
         ->names('guru.productions');
 
@@ -203,16 +240,18 @@ Route::middleware(['auth', 'role:guru'])->group(function () {
     Route::resource('guru/quality-controls', QualityControlController::class)
         ->names('guru.quality-controls');
 
-    // Evaluasi
+    Route::resource('guru/productions', ProductionController::class)
+        ->names('guru.productions');
+
+    Route::resource('guru/production-students', ProductionStudentController::class)
+        ->names('guru.production-students');
+
+    Route::resource('guru/quality-controls', QualityControlController::class)
+        ->names('guru.quality-controls');
     Route::resource('guru/evaluations', EvaluationController::class)
         ->names('guru.evaluations');
-});
 
-/*
-|--------------------------------------------------------------------------
-| SISWA
-|--------------------------------------------------------------------------
-*/
+});
 
 Route::middleware(['auth', 'role:siswa'])->group(function () {
 
@@ -221,12 +260,6 @@ Route::middleware(['auth', 'role:siswa'])->group(function () {
     })->name('siswa.dashboard');
 
 });
-
-/*
-|--------------------------------------------------------------------------
-| PELANGGAN / USER
-|--------------------------------------------------------------------------
-*/
 
 Route::middleware(['auth', 'role:user'])->group(function () {
 
@@ -246,6 +279,56 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/user/orders', function (\Illuminate\Http\Request $request) {
 
         $orders = \App\Models\Order::query()
+
+Route::middleware(['auth', 'role:siswa'])->group(function () {
+
+    Route::get('/siswa', [
+        SiswaDashboardController::class,
+        'index',
+    ])->name('siswa.dashboard');
+
+    Route::get('/siswa/tugas', [TaskController::class, 'index'])
+        ->name('siswa.tasks.index');
+
+    Route::get('/siswa/tugas/{id}', [TaskController::class, 'show'])
+        ->name('siswa.tasks.show');
+
+    Route::get('/siswa/progres', [ProgressController::class, 'index'])
+        ->name('siswa.progress.index');
+
+    Route::get('/siswa/progres/{id}', [ProgressController::class, 'edit'])
+        ->name('siswa.progress.edit');
+
+    Route::put('/siswa/progres/{id}', [ProgressController::class, 'update'])
+        ->name('siswa.progress.update');
+
+    Route::get('/siswa/riwayat', [HistoryController::class, 'index'])
+        ->name('siswa.history.index');
+
+    Route::get('/siswa/evaluasi', [SiswaEvaluationController::class, 'index'])
+        ->name('siswa.evaluations.index');
+
+    Route::get('/siswa/evaluasi/{id}', [SiswaEvaluationController::class, 'show'])
+        ->name('siswa.evaluations.show');
+
+});
+
+Route::middleware(['auth', 'role:user'])->group(function () {
+
+    Route::get('/user/products', [UserOrderController::class, 'index'])
+        ->name('user.orders.index');
+
+    Route::post('/user/orders', [UserOrderController::class, 'store'])
+        ->name('user.orders.store');
+
+    Route::get('/user/orders/{order}', [
+        OrderDetailController::class,
+        'show',
+    ])->name('user.orders.show');
+    Route::get('/user/orders', function (Request $request) {
+
+        $orders = Order::query()
+
             ->where('user_id', $request->user()->id)
             ->with([
                 'orderItems.product',
@@ -261,21 +344,22 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     })->name('user.orders.list');
 });
 
-/*
-|--------------------------------------------------------------------------
-| AUTHENTICATION
-|--------------------------------------------------------------------------
-*/
 
 require __DIR__ . '/auth.php';
-
-/*
-|--------------------------------------------------------------------------
-| MIDTRANS NOTIFICATION
-|--------------------------------------------------------------------------
-*/
 
 Route::post('/midtrans/notification', [
     MidtransNotificationController::class,
     'handle',
 ])->name('midtrans.notification');
+    Route::post('/user/profile', [
+        UserProfileController::class,
+        'update',
+    ]);
+
+});
+
+require __DIR__ . '/auth.php';
+Route::post(
+    '/midtrans/notification',
+    [MidtransNotificationController::class, 'handle']
+)->name('midtrans.notification');
