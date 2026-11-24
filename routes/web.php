@@ -127,6 +127,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         'index',
     ])->name('admin.reports.index');
 
+    Route::get('admin/settings', function () {
+        return 'Halaman settings (belum dibuat)';
+    })->name('admin.settings.index');
+
 });
 
 Route::middleware(['auth', 'role:guru'])->group(function () {
